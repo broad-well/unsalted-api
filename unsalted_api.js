@@ -19,38 +19,50 @@ const packages = {
     }
     //THIS PROGRAM IS NOT AFFILIATED TO THE IMAGES BY ANY MEANS. ANY COPYRIGHTS BELONG TO THE IMAGE OWNER.
 }
-var debug = true; // todo To be changed after sufficient testing.
+var debug = false;
 
 // ---------- FRONTEND ----------
 
-function unsaltify(package) {
-	if(!(package in packages)){
-        grudge("This package identifier is not found/supported.");
-        return false;
+function unsaltify(package, options) {
+    if(_mod_utilities["type-check"](package, "string") &&
+       _mod_utilities["type-check"](options, "string")){
+        if(!(package in packages)){
+            grudge("This package identifier is not found/supported.");
+            return false;
+        }else{
+            var local_options = packages[package]
+            local_options['options'] = options ? options : '';
+            apply(local_options);
+            return true;
+        }
     }else{
-        apply(packages[package])
-        return true;
+        return false;
     }
 }
 
-
+function options_available() {
+    return Object.keys(_mod_options_modifiers);
+}
 
 // ---------- BACKEND ----------
 
 function apply(map){
     log("apply() initiated.");
+    printMap(map);
     if(validateMap(map)){
         log("apply: Building ActionMap...");
         var action_map = map;
-        delete action_map['options'];
+        map = null;
         action_map['txt-appl'] = text_tags;
         action_map['img-appl'] = img_tags;
         action_map['bkg-appl'] = bkg_tags;
-        var options = _mod_utilities["convert-options"](map['options'])
+        var options = _mod_utilities['convert-options'](action_map['options'])
         for(var i = 0; i < options.length; i++){
+            log("Applying option " + options[i]);
             action_map = _mod_options_modifiers[options[i]](action_map);
+            log("New ActionMap: " + _mod_options_modifiers[options[i]](action_map));
         }
-        var "apply: Exiting, calling doReplace."
+        log("apply: Exiting, calling doReplace.")
         doReplace(action_map);
     }else{
         grudge("Application aborted because of internal backend error. (apply, map invalid)");
@@ -70,9 +82,10 @@ function doReplace(actionMap){
         log(sets)
         for(var i = 0; i < sets.length; i++)
             if(sets[i])
-                for(var o = 0; o < sets[i].length; o++)
+                for(var o = 0; o < sets[i].length; o++){
                     log("doReplace: Invoking " + sets[i][o]);
-                    _mod_element_replacers[action_categories[a]](sets[i][o], actionMap[action_categories[a]]);
+                    _mod_element_replacers[action_categories[a]](sets[i][o], actionMap);
+                }
     }
     log("doReplace() finished.");
 }
@@ -87,8 +100,10 @@ function validateMap(map){
     var options = map['options'].split(" ")
     for(var i = 0; i < options.length; i++){
         if(options[i])
-            if(!(options[i] in _mod_options_modifiers))
+            if(!(options[i] in _mod_options_modifiers)){
+                grudge("validateMap: Failed, unidentified option found: \"" + options[i] + "\"");
                 return false;
+            }
     }
     return true;
 }
@@ -100,6 +115,18 @@ function grudge(moaning_reason){
 function log(text){
     if(debug)
         console.log("UnsaltedAPI: " + text);
+}
+
+function printMap(map){
+    if(_mod_utilities['isMap'](map)){
+        var output = []
+        for(var i = 0; i < Object.keys(map).length; i++){
+            output.push(Object.keys(map)[i] + ": " + map[Object.keys(map)[i]]);
+        }
+    }
+    for(var i = 0; i < output.length; i++){
+        log(output[i]);
+    }
 }
 
 // ---------- MODULES ----------
@@ -136,14 +163,18 @@ const _mod_options_modifiers = {
 
 const _mod_utilities = {
     'convert-options':function(optionsString){
-        var output = [];
-        var splitArray = optionsString.split(" ");
-        for(var i = 0; i < splitArray.length; i++){
-            if(splitArray[i]){
-                output.push(splitArray[i]);
+        if(optionsString){
+            var output = [];
+            var splitArray = optionsString.split(" ");
+            for(var i = 0; i < splitArray.length; i++){
+                if(splitArray[i]){
+                    output.push(splitArray[i]);
+                }
             }
+            return output
+        }else{
+            return [];
         }
-        return output
     },
     'isMap':function(obj){
         try{
@@ -152,19 +183,26 @@ const _mod_utilities = {
         }catch(e){
             return false;
         }
+    },
+    'type-check':function(obj, targetType){
+        if(typeof obj === targetType){
+            return true;
+        }else{
+            grudge("TypeCheck error: Expected type " + targetType + ", encountered " + typeof obj);
+        }
     }
 }
 
 const _mod_element_replacers = {
     'txt-appl':function(element, replacement){
-        element.innerHTML = replacement;
+        element.innerHTML = replacement['text'];
     },
     
     'img-appl':function(element, replacement_img){
-        element.src = replacement_img;
+        element.src = replacement_img['image'];
     },
     
     'bkg-appl':function(element, replacement_img){
-        element.style.backgroundImage = "url(\"" + replacement_img + "\")"
+        element.style.backgroundImage = "url(\"" + replacement_img['image'] + "\")"
     }
 }
