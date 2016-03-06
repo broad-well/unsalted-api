@@ -24,18 +24,25 @@ var debug = false;
 // ---------- FRONTEND ----------
 
 function unsaltify(package, options) {
-	if(!(package in packages)){
-        grudge("This package identifier is not found/supported.");
-        return false;
+    if(_mod_utilities["type-check"](package, "string") &&
+       _mod_utilities["type-check"](options, "string")){
+        if(!(package in packages)){
+            grudge("This package identifier is not found/supported.");
+            return false;
+        }else{
+            var local_options = packages[package]
+            local_options['options'] = options ? options : '';
+            apply(local_options);
+            return true;
+        }
     }else{
-        var local_options = packages[package]
-        local_options['options'] = options ? options : '';
-        apply(local_options);
-        return true;
+        return false;
     }
 }
 
-
+function options_available() {
+    return Object.keys(_mod_options_modifiers);
+}
 
 // ---------- BACKEND ----------
 
@@ -45,13 +52,15 @@ function apply(map){
     if(validateMap(map)){
         log("apply: Building ActionMap...");
         var action_map = map;
-        delete action_map['options'];
+        map = null;
         action_map['txt-appl'] = text_tags;
         action_map['img-appl'] = img_tags;
         action_map['bkg-appl'] = bkg_tags;
-        var options = _mod_utilities['convert-options'](map['options'])
+        var options = _mod_utilities['convert-options'](action_map['options'])
         for(var i = 0; i < options.length; i++){
+            log("Applying option " + options[i]);
             action_map = _mod_options_modifiers[options[i]](action_map);
+            log("New ActionMap: " + _mod_options_modifiers[options[i]](action_map));
         }
         log("apply: Exiting, calling doReplace.")
         doReplace(action_map);
@@ -91,8 +100,10 @@ function validateMap(map){
     var options = map['options'].split(" ")
     for(var i = 0; i < options.length; i++){
         if(options[i])
-            if(!(options[i] in _mod_options_modifiers))
+            if(!(options[i] in _mod_options_modifiers)){
+                grudge("validateMap: Failed, unidentified option found: \"" + options[i] + "\"");
                 return false;
+            }
     }
     return true;
 }
@@ -114,9 +125,10 @@ function printMap(map){
         }
     }
     for(var i = 0; i < output.length; i++){
-        console.log(output[i]);
+        log(output[i]);
     }
 }
+
 // ---------- MODULES ----------
 
 const _mod_options_modifiers = {
@@ -170,6 +182,13 @@ const _mod_utilities = {
             return true;
         }catch(e){
             return false;
+        }
+    },
+    'type-check':function(obj, targetType){
+        if(typeof obj === targetType){
+            return true;
+        }else{
+            grudge("TypeCheck error: Expected type " + targetType + ", encountered " + typeof obj);
         }
     }
 }
