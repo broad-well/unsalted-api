@@ -1,12 +1,6 @@
 // ---------- CONSTANTS ----------
 
-var imagePath = "http://www.priorityhealth.com.au/productimages/BB3410.jpg";
-var fillName = "Unsalted Peanuts";
 const requiredArguments = ["text", "image", "options"];
-const text_tags = ["p", "h1", "h2", "h3", "h4", "h5", "b", "i", "span", "title", "li", "strong", "em"];
-const img_tags = ["img"];
-const bkg_tags = ["span", "div"]
-const action_categories = ["txt-appl", "img-appl", "bkg-appl"]
 const packages = {
     'usp':{
         'text':'Unsalted Peanuts',
@@ -25,7 +19,7 @@ var debug = false;
 
 function unsaltify(package, options) {
     if(_mod_utilities["type-check"](package, "string") &&
-       _mod_utilities["type-check"](options, "string")){
+       _mod_utilities["type-check"](options, "string", false)){
         if(!(package in packages)){
             grudge("This package identifier is not found/supported.");
             return false;
@@ -53,9 +47,9 @@ function apply(map){
         log("apply: Building ActionMap...");
         var action_map = map;
         map = null;
-        action_map['txt-appl'] = text_tags;
-        action_map['img-appl'] = img_tags;
-        action_map['bkg-appl'] = bkg_tags;
+        action_map['txt-appl'] = ["p", "h1", "h2", "h3", "h4", "h5", "b", "i", "span", "title", "li", "strong", "em"];
+        action_map['img-appl'] = ["img"];
+        action_map['bkg-appl'] = ["span", "div"];
         var options = _mod_utilities['convert-options'](action_map['options'])
         for(var i = 0; i < options.length; i++){
             log("Applying option " + options[i]);
@@ -72,19 +66,19 @@ function apply(map){
 function doReplace(actionMap){
     log("doReplace() initiated.");
     //Call elements from _mod_element_replacers.
-    for(var a = 0; a < action_categories.length; a++){
+    for(var a = 0; a < Object.keys(_mod_element_replacers).length; a++){
         var sets = []
-        for(var i = 0; i < actionMap[action_categories[a]].length; i++){
+        for(var i = 0; i < actionMap[Object.keys(_mod_element_replacers)[a]].length; i++){
             //Collect HTML elements.
-            log("doReplace: Collecting HTML elements with TagName " + actionMap[action_categories[a]][i]);
-            sets.push(document.getElementsByTagName(actionMap[action_categories[a]][i]));
+            log("doReplace: Collecting HTML elements with TagName " + actionMap[Object.keys(_mod_element_replacers)[a]][i]);
+            sets.push(document.getElementsByTagName(actionMap[Object.keys(_mod_element_replacers)[a]][i]));
         }
         log(sets)
         for(var i = 0; i < sets.length; i++)
             if(sets[i])
                 for(var o = 0; o < sets[i].length; o++){
                     log("doReplace: Invoking " + sets[i][o]);
-                    _mod_element_replacers[action_categories[a]](sets[i][o], actionMap);
+                    _mod_element_replacers[Object.keys(_mod_element_replacers)[a]](sets[i][o], actionMap);
                 }
     }
     log("doReplace() finished.");
@@ -184,11 +178,19 @@ const _mod_utilities = {
             return false;
         }
     },
-    'type-check':function(obj, targetType){
+    'type-check':function(obj, targetType, reinforced){
+        reinforced = reinforced === undefined ? true : reinforced;
         if(typeof obj === targetType){
             return true;
         }else{
-            grudge("TypeCheck error: Expected type " + targetType + ", encountered " + typeof obj);
+            if(reinforced){
+                grudge("TypeCheck error: Expected type " + targetType + ", encountered " + typeof obj);
+                return false;
+            }else{
+                console.warn("TypeCheck warning: Expected type " + targetType + ", encountered " + typeof obj + 
+                    ", suppressed because of reinforcement attribute");
+                return true;
+            }
         }
     }
 }
