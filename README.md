@@ -15,4 +15,6 @@ script.type = "text/javascript";
 script.src = "https://cdn.rawgit.com/michaelpeng2002/unsalted-api/master/unsalted_api.js";
 document.head.appendChild(script)
 ```
-
+ ***
+### Our values
+We value modularity, stability and ease of use. With _unsalted-api_, we aim for a satisfying user experience, yet being hackable and customizable to the core.
