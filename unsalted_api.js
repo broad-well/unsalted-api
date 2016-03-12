@@ -20,6 +20,102 @@ var UnsaltedAPI = (function(){
         'background_elements':["div", "span"]
     }
     var debug = false;
+    const Logger = {
+        LogLevel: 2,
+        Prefix: 'UnsaltedAPI',
+        log: function(string, level){
+            level = level ? level : 1;
+            if(level <= this.LogLevel){
+                console.log(this.Prefix + ": " + string);
+            }
+        }
+    }
+
+    const ModuleManager = {
+        required_keys: ['preferences', 'functions', 'name', 'version', 'runtime', 'attributes'],
+        arrays: ['attributes', 'runtime'],
+        modules: [],
+        mutexes: [],
+
+        validate: function(module_obj){
+            //Check required_keys
+            for(let key of this.required_keys){
+                if(!Object.keys(module_obj).includes(key)){
+                    Logger.log('Module validation failed, key not in object: ' + key);
+                    return false;
+                }
+            }
+
+            //Check types
+            for(let key of this.arrays){
+                if(!Array.isArray(module_obj[key])){
+                    Logger.log('Module validation failed, key value not an array: ' + module_obj[key])
+                    return false;
+                }
+            }
+
+            return true;
+        },
+
+        insert: function(mod){
+            if(this.validate(mod)){
+                if(!this.modules.includes(mod)){
+                    this.modules.push(mod)
+                    Logger.log("Module insertion successful; " + mod);
+                    return true;
+                }else{
+                    Logger.log("Module insertion aborted, duplicate existence")
+                    return false;
+                }
+            }else{
+                Logger.log("Module insertion aborted, validation failed")
+                return false;
+            }
+        },
+
+        list: function() {
+            console.log("- lsmod (Module Listing) output -")
+            for(let i of this.modules){
+                console.log(i.name + ", v" + i.version)
+            }
+            console.log("- lsmod (Module Listing) finished -")
+        },
+
+        info: function(mod) {
+            if(!this.modules.includes(mod)){
+                Logger.log("Module information aborted, module not loaded")
+                return false;
+            }else{
+                console.log("--- Information of " + mod.name + " ---")
+                for(let item of Object.keys(mod)){
+                    console.log(item + ": " + mod[item])
+                }
+                console.log("--- Information finished ---");
+                return true;
+            }
+        },
+
+        load: function(mod) {
+            if(this.modules.includes(mod)){
+                Logger.log("Module load aborted, module already loaded");
+                return false;
+            }else{
+                if(this.validate(mod)){
+                    this.modules.push(mod)
+                    this.mutexes.push(mod)
+                    Logger.log("Loaded module " + mod.name)
+                    return true;
+                }else return false;
+            }
+        },
+
+        selfCheck: function() {
+            if(this.modules.length != this.mutexes.length){
+                console.log("ModuleManager error: SelfCheck: Module length and Mutex length mismatch")
+                return false;
+            }else return true;
+        }
+    }
 
     // ---------- BACKEND ----------
 
