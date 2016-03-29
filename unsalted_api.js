@@ -217,7 +217,7 @@ var UnsaltedAPI = (function() {
                   }
               },
               resources: {
-                  elements: document.getElementsByTagName('*')
+                  elements: [].slice.call(document.getElementsByTagName('*'))
               }
           }
       }
