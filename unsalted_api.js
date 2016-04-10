@@ -21,7 +21,7 @@ var UnsaltedAPI = (function() {
 		},
 
 		pearson_dilation: {
-			text: ["Dilations, dilatons, the groovy transformations!"],
+			text: ["Dilations, dilations, the groovy transformations!"],
 			image: "",
 			background: ""
 		}
@@ -31,7 +31,7 @@ var UnsaltedAPI = (function() {
 		text: {
 			TextElements: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'a', 'code', 'b', 'strong', 'em', 'i'],
 			replace: function(element, pkgname){
-				element.innerHTML = pickRandom(Packages[pkgname].text);
+				element.innerHTML = pickRandom(pkgname);
 			},
 			fetch: function(){
 				//Use children filter.
@@ -48,7 +48,7 @@ var UnsaltedAPI = (function() {
 
 		image: {
 			replace: function(element, pkgname){
-				element.src = Packages[pkgname].image;
+				element.src = pkgname;
 			},
 			fetch: function() {
 				return [].slice.call(document.getElementsByTagName("img"));
@@ -58,7 +58,7 @@ var UnsaltedAPI = (function() {
 
 		background: {
 			replace: function(element, pkgname){
-				element.style.backgroundImage = "url('" + Packages[pkgname].background + "')";
+				element.style.backgroundImage = "url('" + pkgname + "')";
 			},
 			fetch: function() {
 				return commonElements.all();
@@ -120,7 +120,7 @@ var UnsaltedAPI = (function() {
 				log("Replacing Items Of Type " + i);
 				var counter = 0;
 				MainNamespace[i].forEach(function(item){
-					Modules[i].replace(item, pkgname);
+					Modules[i].replace(item, Packages[pkgname][i]);
 					counter++;
 				});
 				log("Finished. Statistics:");
