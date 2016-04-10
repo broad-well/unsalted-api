@@ -1,4 +1,6 @@
 var UnsaltedAPI = (function() {
+	var debug = false;
+	var originalDocument = document.getElementsByTagName("html")[0].innerHTML;
 	var commonElements = {
 		all: function() {return [].slice.call(document.querySelectorAll("*"))}
 	};
@@ -68,7 +70,7 @@ var UnsaltedAPI = (function() {
 	};
 
 	function log(str){
-		if(true){
+		if(debug){
 			if(str === '')
 				console.log('');
 			else
@@ -131,29 +133,42 @@ var UnsaltedAPI = (function() {
 		log("All Replacements finished.");
 	}
 
-	function validatePackage(pkg){
-		Object.keys(Modules).forEach(function(i){
-			if(!Object.keys(pkg).includes(i)){
-				return false;
-			}
-		});
-		return true;
-	}
-
 	return {
 		unsaltify: function(pkg, modifiers){
 			if(!pkg){
 				console.error("Package name not defined");
 				return false;
 			}
-			mainRoutine(pkg, modifiers);
+			if(typeof pkg !== "string"){
+				console.error("PackageName not string");
+				return false;
+			}
+			if(!Object.keys(Packages).includes(pkg)){
+				console.error("Package not found");
+				return false;
+			}
+			return mainRoutine(pkg, modifiers);
 		},
 		usp: function(pkg, modifiers){
 			this.unsaltify(pkg, modifiers);
 		},
+		un_unsaltify: function(){
+			if(originalDocument){
+				document.getElementsByTagName("html")[0].innerHTML = originalDocument;
+			}else{
+				console.warn("Un-unsaltify not available");
+			}
+			return !!originalDocument;
+		},
 		dev: {
 			modules: Modules,
-			pkgs: Packages
+			pkgs: Packages,
+			debug: debug,
+			utils: {
+				pickRandom: function(list,max){
+					return list[Math.floor(Math.random() * list.length)];
+				}
+			}
 		}
 	};
 }());
